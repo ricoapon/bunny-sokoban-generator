@@ -261,6 +261,11 @@ data class Grid(
         return mainGrid
     }
 
+    fun movePlayerThenBunny(direction: Coordinate, bunnyAI: BunnyAI): Grid {
+        val newGrid = movePlayer(direction)
+        return newGrid.moveBunnyUntilNoMoreMovesPossible(bunnyAI)
+    }
+
     fun toAsciiArt(): String {
         fun cellToChar(cell: Cell): Char = when (cell) {
             is WallCell -> '#'

@@ -16,8 +16,7 @@ sealed interface Move {
 
 data class MoveDirection(val direction: Coordinate, val name: String) : Move {
     override fun execute(grid: Grid): Grid {
-        val newGrid = grid.movePlayer(direction)
-        return newGrid.moveBunnyUntilNoMoreMovesPossible(BUNNY_AI)
+        return grid.movePlayerThenBunny(direction, BUNNY_AI)
     }
 
     override fun toString(): String {
