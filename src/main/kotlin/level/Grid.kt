@@ -4,6 +4,13 @@ import org.example.cells.*
 import kotlin.math.abs
 
 data class Coordinate(val x: Int, val y: Int) {
+    companion object {
+        val UP = Coordinate(0, -1)
+        val DOWN = Coordinate(0, 1)
+        val LEFT = Coordinate(-1, 0)
+        val RIGHT = Coordinate(1, 0)
+    }
+
     operator fun plus(other: Coordinate) = Coordinate(x + other.x, y + other.y)
     operator fun minus(other: Coordinate) = Coordinate(x - other.x, y - other.y)
     operator fun div(other: Int) = Coordinate(x / other, y / other)
@@ -34,6 +41,20 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
     private var droppedMaskCoordinate: Coordinate? = null
     private var bunnyCoordinate: Coordinate = grid.filter { it.value is BunnyCell }.keys.first()
     private var caughtBunny = false
+
+    companion object {
+        fun fromIntegerList(integerGrid: List<List<Int>>): Grid {
+            val grid = mutableMapOf<Coordinate, Cell>()
+            val height = integerGrid.size
+            val width = integerGrid[0].size
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    grid[Coordinate(x, y)] = Cell.convertIntToCell(integerGrid[y][x])
+                }
+            }
+            return Grid(grid, width, height)
+        }
+    }
 
     fun getCell(coordinate: Coordinate): Cell {
         return grid[coordinate]!!
@@ -67,19 +88,19 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
     }
 
     fun movePlayerUp() {
-        movePlayer(Coordinate(0, -1))
+        movePlayer(Coordinate.UP)
     }
 
     fun movePlayerDown() {
-        movePlayer(Coordinate(0, 1))
+        movePlayer(Coordinate.DOWN)
     }
 
     fun movePlayerLeft() {
-        movePlayer(Coordinate(-1, 0))
+        movePlayer(Coordinate.LEFT)
     }
 
     fun movePlayerRight() {
-        movePlayer(Coordinate(1, 0))
+        movePlayer(Coordinate.RIGHT)
     }
 
     fun pickupMask() {
