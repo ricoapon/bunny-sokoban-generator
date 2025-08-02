@@ -27,9 +27,13 @@ class GridGeneratorWithPlayerAndBunnyIterator(private val grid: Map<Coordinate, 
         return iterator {
             for (i in emptyCells.indices) {
                 for (j in emptyCells.indices) {
-                    if (i != j) {
-                        yield(Pair(emptyCells[i], emptyCells[j]))
-                    }
+                    if (i == j) continue
+                    val c1 = emptyCells[i]
+                    val c2 = emptyCells[j]
+                    // Make sure we have distance of at least 3, because otherwise the bunny needs to move.
+                    if (c1.manhattanDistance(c2) < 3) continue
+
+                    yield(Pair(c1, c2))
                 }
             }
         }
