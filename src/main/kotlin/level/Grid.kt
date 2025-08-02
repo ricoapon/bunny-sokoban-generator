@@ -1,5 +1,6 @@
 package org.example.level
 
+import org.example.ai.BunnyAI
 import org.example.cells.*
 import kotlin.math.abs
 
@@ -28,6 +29,7 @@ data class Coordinate(val x: Int, val y: Int) {
     fun left(straightDirection: Coordinate): Coordinate {
         return Coordinate(x + straightDirection.y, y - straightDirection.x)
     }
+
     fun right(straightDirection: Coordinate): Coordinate {
         return Coordinate(x - straightDirection.y, y + straightDirection.x)
     }
@@ -35,13 +37,16 @@ data class Coordinate(val x: Int, val y: Int) {
 
 data class CellCoordinate(val cell: Cell, val coordinate: Coordinate)
 
-class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val height: Int) {
-    // These are singular and often used, so keep track of those.
-    private var playerCoordinate: Coordinate = grid.filter { it.value is PlayerCell }.keys.first()
-    private var droppedMaskCoordinate: Coordinate? = null
-    private var bunnyCoordinate: Coordinate = grid.filter { it.value is BunnyCell }.keys.first()
-    private var caughtBunny = false
-
+// Grid must be immutable, otherwise it won't work properly for BFS.
+data class Grid(
+    private val grid: Map<Coordinate, Cell>,
+    val width: Int,
+    val height: Int,
+    val playerCoordinate: Coordinate,
+    val droppedMaskCoordinate: Coordinate?,
+    val bunnyCoordinate: Coordinate,
+    val caughtBunny: Boolean = false
+) {
     companion object {
         fun fromIntegerList(integerGrid: List<List<Int>>): Grid {
             val grid = mutableMapOf<Coordinate, Cell>()
@@ -52,7 +57,9 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
                     grid[Coordinate(x, y)] = Cell.convertIntToCell(integerGrid[y][x])
                 }
             }
-            return Grid(grid, width, height)
+            return Grid(grid, width, height, grid.filter { it.value is PlayerCell }.keys.first(),
+                grid.filter { it.value is DroppedMaskCell }.keys.firstOrNull(),
+                grid.filter { it.value is BunnyCell }.keys.first())
         }
     }
 
@@ -64,8 +71,18 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
         return c.x >= 0 && c.y >= 0 && c.x < width && c.y < height
     }
 
-    private fun setCell(coordinate: Coordinate, cell: Cell) {
-        grid[coordinate] = cell
+    // Moving is changing from and to, so we often do two cells at once.
+    private fun setCell(coordinate: Coordinate, cell: Cell, coordinate2: Coordinate? = null, cell2: Cell? = null,
+                        newPlayerCoordinate: Coordinate = playerCoordinate,
+                        newDroppedMaskCoordinate: Coordinate? = droppedMaskCoordinate,
+                        newBunnyCoordinate: Coordinate = bunnyCoordinate,
+                        newCaughtBunny: Boolean = caughtBunny): Grid {
+        val mutableGrid = grid.toMutableMap()
+        mutableGrid[coordinate] = cell
+        if (coordinate2 != null && cell2 != null) {
+            mutableGrid[coordinate2] = cell2
+        }
+        return Grid(mutableGrid, width, height, newPlayerCoordinate, newDroppedMaskCoordinate, newBunnyCoordinate, newCaughtBunny)
     }
 
     fun getPlayer(): CellCoordinate {
@@ -80,54 +97,39 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
         if (droppedMaskCoordinate == null) {
             return null
         }
-        return CellCoordinate(grid[droppedMaskCoordinate]!!, droppedMaskCoordinate!!)
+        return CellCoordinate(grid[droppedMaskCoordinate]!!, droppedMaskCoordinate)
     }
 
     fun caughtBunny(): Boolean {
         return caughtBunny
     }
 
-    fun movePlayerUp() {
-        movePlayer(Coordinate.UP)
-    }
-
-    fun movePlayerDown() {
-        movePlayer(Coordinate.DOWN)
-    }
-
-    fun movePlayerLeft() {
-        movePlayer(Coordinate.LEFT)
-    }
-
-    fun movePlayerRight() {
-        movePlayer(Coordinate.RIGHT)
-    }
-
-    fun pickupMask() {
+    fun pickupMask(): Grid {
         val playerCell = getCell(playerCoordinate)
         if (playerCell !is PlayerOnTopOfDroppedMask) {
             throw RuntimeException("Cannot pickup mask if player is not on top of it")
         }
 
-        setCell(playerCoordinate, playerCell.playerCell)
+        return setCell(playerCoordinate, playerCell.playerCell, newDroppedMaskCoordinate = null)
     }
 
-    fun dropMask() {
+    fun dropMask(): Grid {
         if (droppedMaskCoordinate != null) {
             throw RuntimeException("Cannot drop mask if player has already dropped it")
         }
 
-        setCell(
+        return setCell(
             playerCoordinate,
-            PlayerOnTopOfDroppedMask(getCell(playerCoordinate) as PlayerCell, DroppedMaskCell(Mask.FOX))
+            PlayerOnTopOfDroppedMask(getCell(playerCoordinate) as PlayerCell, DroppedMaskCell(Mask.FOX)),
+            newDroppedMaskCoordinate = playerCoordinate
         )
     }
 
-    fun switchPlayerMask(newMask: Mask) {
-        setCell(playerCoordinate, PlayerCell(newMask))
+    fun switchPlayerMask(newMask: Mask): Grid {
+        return setCell(playerCoordinate, PlayerCell(newMask))
     }
 
-    private fun movePlayer(direction: Coordinate) {
+    fun movePlayer(direction: Coordinate): Grid {
         if (abs(direction.x) + abs(direction.y) > 1) {
             throw RuntimeException("Cannot move player more than one step")
         }
@@ -144,28 +146,23 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
         when (val toCell = getCell(to)) {
             is WallCell -> throw RuntimeException("Cannot move player into a wall")
             is BunnyCell -> {
-                setCell(from, cellToLeaveBehind)
-                setCell(to, playerCell)
-                caughtBunny = true
+                return setCell(from, cellToLeaveBehind, to, playerCell, newPlayerCoordinate = to, newCaughtBunny = true)
             }
 
             is DroppedMaskCell -> {
-                setCell(from, cellToLeaveBehind)
-                setCell(to, PlayerOnTopOfDroppedMask(playerCell as PlayerCell, toCell))
+                return setCell(from, cellToLeaveBehind, to, PlayerOnTopOfDroppedMask(playerCell as PlayerCell, toCell), newPlayerCoordinate = to)
             }
 
             is EmptyCell -> {
-                setCell(from, cellToLeaveBehind)
-                setCell(to, playerCell)
+                return setCell(from, cellToLeaveBehind, to, playerCell, newPlayerCoordinate = to)
             }
 
             is PlayerCell -> throw RuntimeException("Player should never move on top of player, because there is only one player")
             is PlayerOnTopOfDroppedMask -> throw RuntimeException("Player should never move on top of player on top of mask, because there is only one player")
         }
-        playerCoordinate = to
     }
 
-    fun moveBunny(direction: Coordinate) {
+    fun moveBunny(direction: Coordinate): Grid {
         if (abs(direction.x) + abs(direction.y) > 1) {
             throw RuntimeException("Cannot move bunny more than one step")
         }
@@ -181,15 +178,9 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
             }
 
             is EmptyCell -> {
-                setCell(from, EmptyCell())
-                setCell(to, bunnyCell)
+                val grid2 = setCell(from, EmptyCell())
+                return grid2.setCell(to, bunnyCell, newBunnyCoordinate = to)
             }
         }
-        bunnyCoordinate = to
-    }
-
-    fun state(): Any {
-        // Both Cell and Coordinate are data classes, therefore immutable. This copy will never be able to change.
-        return grid.toMap()
     }
 }
