@@ -293,6 +293,16 @@ val ALL_THREE_BY_THREE_TEMPLATES = listOf(
             listOf(9, 0, 0, 1, 9),
         )
     ),
+    // Template I added, since we need "non-obvious dead-ends" to trap the bunny in.
+    ThreeByThreeTemplate.fromInt(
+        listOf(
+            listOf(9, 9, 9, 9, 9),
+            listOf(9, 1, 1, 1, 1),
+            listOf(9, 1, 0, 0, 1),
+            listOf(9, 1, 0, 1, 1),
+            listOf(9, 9, 0, 9, 9),
+        )
+    ),
 )
 
 val ALL_TEMPLATE_TRANSFORMATIONS = TemplateTransformation.entries.toTypedArray().toList()
