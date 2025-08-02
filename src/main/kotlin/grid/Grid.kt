@@ -138,10 +138,6 @@ data class Grid(
         return CellCoordinate(grid[droppedMaskCoordinate]!!, droppedMaskCoordinate)
     }
 
-    fun caughtBunny(): Boolean {
-        return caughtBunny
-    }
-
     fun pickupMask(): Grid {
         val playerCell = getCell(playerCoordinate)
         if (playerCell !is PlayerOnTopOfDroppedMask) {
