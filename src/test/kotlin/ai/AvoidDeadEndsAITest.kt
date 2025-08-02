@@ -3,7 +3,7 @@ package ai
 import org.example.ai.AvoidDeadEndsAI
 import org.example.level.Coordinate
 import org.example.level.Grid
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AvoidDeadEndsAITest {

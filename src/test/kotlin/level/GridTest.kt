@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class GridTest {
-    private val A = Coordinate(1,0 )
+    private val A = Coordinate(1, 0)
     private val B = Coordinate(2, 0)
-    private val C = Coordinate(3,0)
+    private val C = Coordinate(3, 0)
 
     @Test
     fun repeatingCycleHappyFlow() {
@@ -27,11 +27,11 @@ class GridTest {
         // Given
         val grid = Grid.fromIntegerList(
             listOf(
-                listOf(1,1,1,1,1,1,1),
-                listOf(1,0,0,0,3,0,1),
-                listOf(1,2,5,0,0,0,1),
-                listOf(1,0,0,0,0,0,1),
-                listOf(1,1,1,1,1,1,1),
+                listOf(1, 1, 1, 1, 1, 1, 1),
+                listOf(1, 0, 0, 0, 3, 0, 1),
+                listOf(1, 2, 5, 0, 0, 0, 1),
+                listOf(1, 0, 0, 0, 0, 0, 1),
+                listOf(1, 1, 1, 1, 1, 1, 1),
             )
         )
         val bunnyAI = AvoidDeadEndsAI()
@@ -48,9 +48,9 @@ class GridTest {
         // Given
         val grid = Grid.fromIntegerList(
             listOf(
-                listOf(1,1,1,1,1,1,1),
-                listOf(1,2,5,0,3,0,1),
-                listOf(1,1,1,1,1,1,1),
+                listOf(1, 1, 1, 1, 1, 1, 1),
+                listOf(1, 2, 5, 0, 3, 0, 1),
+                listOf(1, 1, 1, 1, 1, 1, 1),
             )
         )
         val bunnyAI = AvoidDeadEndsAI()
