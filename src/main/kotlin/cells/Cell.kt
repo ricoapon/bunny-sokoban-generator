@@ -32,4 +32,4 @@ data class DroppedMaskCell(val mask: Mask) : Cell
 
 data class PlayerOnTopOfDroppedMask(val playerCell: PlayerCell, val droppedMaskCell: DroppedMaskCell) : Cell
 
-data class BunnyCell(val irrelevant: Boolean = true) : Cell
+data class BunnyCell(val isExhausted: Boolean = false) : Cell

@@ -57,9 +57,37 @@ data class Grid(
                     grid[Coordinate(x, y)] = Cell.convertIntToCell(integerGrid[y][x])
                 }
             }
-            return Grid(grid, width, height, grid.filter { it.value is PlayerCell }.keys.first(),
+            return Grid(
+                grid, width, height, grid.filter { it.value is PlayerCell }.keys.first(),
                 grid.filter { it.value is DroppedMaskCell }.keys.firstOrNull(),
-                grid.filter { it.value is BunnyCell }.keys.first())
+                grid.filter { it.value is BunnyCell }.keys.first()
+            )
+        }
+
+        // Put it here so it is easier to test.
+        fun hasRepeatingCycle(history: List<Coordinate>, requiredRepetitions: Int = 2): Boolean {
+            val maxCycleLength = history.size / requiredRepetitions
+
+            for (cycleLength in 1..maxCycleLength) {
+                val cycle = history.takeLast(cycleLength)
+                var matchCount = 0
+
+                for (i in (history.size - cycleLength * requiredRepetitions)..(history.size - cycleLength) step cycleLength) {
+                    if (i < 0) break
+                    val segment = history.subList(i, i + cycleLength)
+                    if (segment == cycle) {
+                        matchCount++
+                    } else {
+                        break
+                    }
+                }
+
+                if (matchCount >= requiredRepetitions - 1) {
+                    return true
+                }
+            }
+
+            return false
         }
     }
 
@@ -72,17 +100,27 @@ data class Grid(
     }
 
     // Moving is changing from and to, so we often do two cells at once.
-    private fun setCell(coordinate: Coordinate, cell: Cell, coordinate2: Coordinate? = null, cell2: Cell? = null,
-                        newPlayerCoordinate: Coordinate = playerCoordinate,
-                        newDroppedMaskCoordinate: Coordinate? = droppedMaskCoordinate,
-                        newBunnyCoordinate: Coordinate = bunnyCoordinate,
-                        newCaughtBunny: Boolean = caughtBunny): Grid {
+    private fun setCell(
+        coordinate: Coordinate, cell: Cell, coordinate2: Coordinate? = null, cell2: Cell? = null,
+        newPlayerCoordinate: Coordinate = playerCoordinate,
+        newDroppedMaskCoordinate: Coordinate? = droppedMaskCoordinate,
+        newBunnyCoordinate: Coordinate = bunnyCoordinate,
+        newCaughtBunny: Boolean = caughtBunny
+    ): Grid {
         val mutableGrid = grid.toMutableMap()
         mutableGrid[coordinate] = cell
         if (coordinate2 != null && cell2 != null) {
             mutableGrid[coordinate2] = cell2
         }
-        return Grid(mutableGrid, width, height, newPlayerCoordinate, newDroppedMaskCoordinate, newBunnyCoordinate, newCaughtBunny)
+        return Grid(
+            mutableGrid,
+            width,
+            height,
+            newPlayerCoordinate,
+            newDroppedMaskCoordinate,
+            newBunnyCoordinate,
+            newCaughtBunny
+        )
     }
 
     fun getPlayer(): CellCoordinate {
@@ -150,7 +188,13 @@ data class Grid(
             }
 
             is DroppedMaskCell -> {
-                return setCell(from, cellToLeaveBehind, to, PlayerOnTopOfDroppedMask(playerCell as PlayerCell, toCell), newPlayerCoordinate = to)
+                return setCell(
+                    from,
+                    cellToLeaveBehind,
+                    to,
+                    PlayerOnTopOfDroppedMask(playerCell as PlayerCell, toCell),
+                    newPlayerCoordinate = to
+                )
             }
 
             is EmptyCell -> {
@@ -162,7 +206,7 @@ data class Grid(
         }
     }
 
-    fun moveBunny(direction: Coordinate): Grid {
+    private fun moveBunny(direction: Coordinate): Grid {
         if (abs(direction.x) + abs(direction.y) > 1) {
             throw RuntimeException("Cannot move bunny more than one step")
         }
@@ -182,5 +226,58 @@ data class Grid(
                 return grid2.setCell(to, bunnyCell, newBunnyCoordinate = to)
             }
         }
+    }
+
+    fun moveBunnyUntilNoMoreMovesPossible(bunnyAI: BunnyAI): Grid {
+        if (caughtBunny) {
+            return this
+        }
+
+        // The bunny is allowed to make any number of moves, which can lead to infinity in some cases. Keep track of the
+        // full history to see if this happens. We only need to keep track of the coordinates, since nothing on the board
+        // can change except for the bunny moving around.
+        val history = mutableListOf(bunnyCoordinate)
+
+        var mainGrid = this
+        var direction = bunnyAI.getNextBunnyDirection(mainGrid)
+        while (direction != null) {
+            mainGrid = mainGrid.moveBunny(direction)
+            history.add(mainGrid.bunnyCoordinate)
+
+            if (hasRepeatingCycle(history)) {
+                return mainGrid.setCell(
+                    mainGrid.bunnyCoordinate,
+                    (mainGrid.getBunny().cell as BunnyCell).copy(isExhausted = true)
+                )
+            }
+
+            direction = bunnyAI.getNextBunnyDirection(mainGrid)
+        }
+
+        return mainGrid
+    }
+
+    fun toAsciiArt(): String {
+        fun cellToChar(cell: Cell): Char = when (cell) {
+            is WallCell -> '#'
+            is EmptyCell -> '.'
+            is BunnyCell -> if (cell.isExhausted) 'E' else 'B'
+            is PlayerCell -> 'P'
+            is DroppedMaskCell -> 'D'
+            is PlayerOnTopOfDroppedMask -> 'T'
+        }
+
+        val builder = StringBuilder()
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val coordinate = Coordinate(x, y)
+                val cell = getCell(coordinate)
+                builder.append(cellToChar(cell))
+            }
+            builder.append('\n')
+        }
+
+        return builder.toString()
     }
 }

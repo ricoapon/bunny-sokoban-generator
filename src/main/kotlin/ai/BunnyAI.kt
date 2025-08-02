@@ -14,14 +14,16 @@ interface BunnyAI {
 
 class AvoidDeadEndsAI : BunnyAI {
     override fun getNextBunnyDirection(grid: Grid): Coordinate? {
-        if (!isPlayerInSightOfBunny(grid)) {
+        if ((grid.getBunny().cell as BunnyCell).isExhausted) {
             return null
         }
 
-        // Always check for the player first, then the mask.
-        val result = getStepForEntity(grid, grid.getPlayer())
-        if (result != null) {
-            return result
+        // Always check for the player first, then the mask.=
+        if (isPlayerInSightOfBunny(grid)) {
+            val result = getStepForEntity(grid, grid.getPlayer())
+            if (result != null) {
+                return result
+            }
         }
 
         if (!isMaskInSightOfBunny(grid)) {
