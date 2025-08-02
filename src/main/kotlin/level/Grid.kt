@@ -182,7 +182,11 @@ data class Grid(
         }
 
         when (val toCell = getCell(to)) {
-            is WallCell -> throw RuntimeException("Cannot move player into a wall")
+            // Do nothing, so that the solver can just continue.
+            is WallCell -> {
+                return this
+            }
+
             is BunnyCell -> {
                 return setCell(from, cellToLeaveBehind, to, playerCell, newPlayerCoordinate = to, newCaughtBunny = true)
             }
