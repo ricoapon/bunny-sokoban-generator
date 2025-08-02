@@ -4,3 +4,5 @@ build/
 .kotlin
 
 .idea
+
+generated_levels.txt
