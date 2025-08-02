@@ -39,8 +39,8 @@ class AvoidDeadEndsAI : BunnyAI {
         // We want to move away from the player. We orient the direction based on the line between the player and the
         // bunny. The player could be 2 squares away. Make sure direction is normalized to length 1.
         val straight = (b - e) / b.manhattanDistance(e)
-        val left = straight.turnCounterClockwise()
-        val right = straight.turnClockwise()
+        val left = straight.turnClockwise()
+        val right = straight.turnCounterClockwise()
 
         val directions = listOf(straight, left, right)
 

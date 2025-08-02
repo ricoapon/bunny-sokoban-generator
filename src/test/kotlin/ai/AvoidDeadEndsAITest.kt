@@ -32,4 +32,29 @@ class AvoidDeadEndsAITest {
         // Then
         assertEquals(Coordinate.LEFT, result)
     }
+
+
+    @Test
+    fun preferLeftOverRight() {
+        // Given
+        val grid = Grid.fromIntegerList(
+            listOf(
+                listOf(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1),
+                listOf(1,0,0,1,0,0,0,0,1,1,1,1,1,0,1),
+                listOf(1,0,0,0,0,0,0,0,0,0,0,0,1,0,1),
+                listOf(1,1,1,1,1,1,0,1,1,1,1,5,0,2,1),
+                listOf(1,1,0,0,0,0,0,1,1,0,1,0,0,0,1),
+                listOf(1,1,1,0,0,0,1,0,0,0,1,0,0,0,1),
+                listOf(1,1,1,1,0,1,1,0,0,0,0,0,0,0,1),
+                listOf(1,1,1,0,0,1,1,1,1,1,1,1,1,0,1),
+                listOf(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1),
+            )
+        )
+
+        // When
+        val result = bunnyAI.getNextBunnyDirection(grid)
+
+        // Then
+        assertEquals(Coordinate.DOWN, result)
+    }
 }
