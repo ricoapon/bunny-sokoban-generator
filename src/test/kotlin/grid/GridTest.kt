@@ -1,6 +1,6 @@
 @file:Suppress("PrivatePropertyName")
 
-package level
+package grid
 
 import org.example.ai.AvoidDeadEndsAI
 import org.example.cells.BunnyCell
