@@ -8,6 +8,7 @@ import kotlin.random.Random
 
 val ALL_DIRECTIONS = listOf(Coordinate.UP, Coordinate.DOWN, Coordinate.LEFT, Coordinate.RIGHT)
 
+// Only generates a grid with walls and empty cells. Does not add player or bunny!
 class GridGenerator(private val randomGenerator: Random = Random(System.currentTimeMillis())) {
 
     fun generate(): Map<Coordinate, Cell> {
