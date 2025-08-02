@@ -5,6 +5,25 @@ import kotlin.math.abs
 
 data class Coordinate(val x: Int, val y: Int) {
     operator fun plus(other: Coordinate) = Coordinate(x + other.x, y + other.y)
+    operator fun minus(other: Coordinate) = Coordinate(x - other.x, y - other.y)
+    operator fun div(other: Int) = Coordinate(x / other, y / other)
+
+    fun manhattanDistance(other: Coordinate) = abs(x - other.x) + abs(y - other.y)
+
+    fun turnClockwise(): Coordinate {
+        return Coordinate(y, -x)
+    }
+
+    fun turnCounterClockwise(): Coordinate {
+        return Coordinate(-y, x)
+    }
+
+    fun left(straightDirection: Coordinate): Coordinate {
+        return Coordinate(x + straightDirection.y, y - straightDirection.x)
+    }
+    fun right(straightDirection: Coordinate): Coordinate {
+        return Coordinate(x - straightDirection.y, y + straightDirection.x)
+    }
 }
 
 data class CellCoordinate(val cell: Cell, val coordinate: Coordinate)
@@ -20,6 +39,10 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
         return grid[coordinate]!!
     }
 
+    fun isCoordinateOnGrid(c: Coordinate): Boolean {
+        return c.x >= 0 && c.y >= 0 && c.x < width && c.y < height
+    }
+
     private fun setCell(coordinate: Coordinate, cell: Cell) {
         grid[coordinate] = cell
     }
@@ -32,6 +55,13 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
         return CellCoordinate(grid[bunnyCoordinate]!!, bunnyCoordinate)
     }
 
+    fun getMask(): CellCoordinate? {
+        if (droppedMaskCoordinate == null) {
+            return null
+        }
+        return CellCoordinate(grid[droppedMaskCoordinate]!!, droppedMaskCoordinate!!)
+    }
+
     fun caughtBunny(): Boolean {
         return caughtBunny
     }
@@ -39,12 +69,15 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
     fun movePlayerUp() {
         movePlayer(Coordinate(0, -1))
     }
+
     fun movePlayerDown() {
         movePlayer(Coordinate(0, 1))
     }
+
     fun movePlayerLeft() {
         movePlayer(Coordinate(-1, 0))
     }
+
     fun movePlayerRight() {
         movePlayer(Coordinate(1, 0))
     }
@@ -63,7 +96,10 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
             throw RuntimeException("Cannot drop mask if player has already dropped it")
         }
 
-        setCell(playerCoordinate, PlayerOnTopOfDroppedMask(getCell(playerCoordinate) as PlayerCell, DroppedMaskCell(Mask.FOX)))
+        setCell(
+            playerCoordinate,
+            PlayerOnTopOfDroppedMask(getCell(playerCoordinate) as PlayerCell, DroppedMaskCell(Mask.FOX))
+        )
     }
 
     fun switchPlayerMask(newMask: Mask) {
@@ -91,14 +127,17 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
                 setCell(to, playerCell)
                 caughtBunny = true
             }
+
             is DroppedMaskCell -> {
                 setCell(from, cellToLeaveBehind)
                 setCell(to, PlayerOnTopOfDroppedMask(playerCell as PlayerCell, toCell))
             }
+
             is EmptyCell -> {
                 setCell(from, cellToLeaveBehind)
                 setCell(to, playerCell)
             }
+
             is PlayerCell -> throw RuntimeException("Player should never move on top of player, because there is only one player")
             is PlayerOnTopOfDroppedMask -> throw RuntimeException("Player should never move on top of player on top of mask, because there is only one player")
         }
@@ -119,6 +158,7 @@ class Grid(private val grid: MutableMap<Coordinate, Cell>, val width: Int, val h
             is BunnyCell -> {
                 throw RuntimeException("Bunny should never move on top of bunny, because there is only one bunny")
             }
+
             is EmptyCell -> {
                 setCell(from, EmptyCell())
                 setCell(to, bunnyCell)
